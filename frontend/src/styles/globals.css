@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #080D0A;
+  --bg-secondary: #0D1510;
+  --bg-sidebar: #0A100C;
+  --bg-card: #121C15;
+  --bg-elevated: #18231B;
+  --accent-primary: #39FF88;
+  --accent-secondary: #00B894;
+  --text-primary: #F4F8F5;
+  --text-secondary: #9AA79E;
+  --text-muted: #68766D;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --green-glow: rgba(57, 255, 136, 0.18);
+  --status-success: #39FF88;
+  --status-warning: #F5B942;
+  --status-critical: #FF5D62;
+  --status-info: #5BA8FF;
+  --status-neutral: #8B9890;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #080D0A;
+}
+::-webkit-scrollbar-thumb {
+  background: #18231B;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(57, 255, 136, 0.3);
+}
+
+/* Industrial Grid Background */
+.bg-grid-pattern {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(57, 255, 136, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(57, 255, 136, 0.035) 1px, transparent 1px);
+}
+
+.bg-dot-pattern {
+  background-size: 24px 24px;
+  background-image: radial-gradient(rgba(57, 255, 136, 0.1) 1px, transparent 1px);
+}
+
+/* Radial Glow utility */
+.radial-glow {
+  background: radial-gradient(circle at 50% 30%, rgba(57, 255, 136, 0.12) 0%, transparent 65%);
+}
+
+.radial-glow-corner {
+  background: radial-gradient(circle at 100% 0%, rgba(0, 184, 148, 0.15) 0%, transparent 50%);
+}
+
+/* Glassmorphism */
+.glass-panel {
+  background: rgba(18, 28, 21, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-elevated {
+  background: rgba(24, 35, 27, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(57, 255, 136, 0.16);
+}
+
+/* Technical Border corners */
+.tech-box {
+  position: relative;
+}
+.tech-box::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid #39FF88;
+  border-left: 2px solid #39FF88;
+  pointer-events: none;
+}
+.tech-box::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 8px;
+  height: 8px;
+  border-bottom: 2px solid #39FF88;
+  border-right: 2px solid #39FF88;
+  pointer-events: none;
+}
+
+/* Scanline overlay for futuristic tech feel */
+.scanline {
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0),
+    rgba(255,255,255,0) 50%,
+    rgba(0, 0, 0, 0.25) 50%,
+    rgba(0, 0, 0, 0.25)
+  );
+  background-size: 100% 4px;
+}
+
+/* Pulse animation utility */
+@keyframes neon-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(57, 255, 136, 0.25), inset 0 0 15px rgba(57, 255, 136, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(57, 255, 136, 0.45), inset 0 0 20px rgba(57, 255, 136, 0.2);
+  }
+}
+
+.animate-glow-pulse {
+  animation: neon-glow-pulse 3s infinite ease-in-out;
+}
