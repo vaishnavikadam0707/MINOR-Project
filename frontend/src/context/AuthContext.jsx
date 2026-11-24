@@ -31,21 +31,29 @@ export function AuthProvider({ children }) {
       return { success: false, error: 'Invalid demo credentials. Default demo password is "Demo123!".' };
     }
 
-    const matchedUser = INITIAL_USERS.find(
-      (u) => u.email.toLowerCase() === cleanEmail && u.active
+    const currentUsers = storageService.getUsers();
+    const existingUser = currentUsers.find(
+      (u) => u.email.toLowerCase() === cleanEmail
     );
 
-    if (!matchedUser) {
+    if (!existingUser) {
       return {
         success: false,
-        error: 'Demo user not recognized. Please choose from Admin, Manager, Technician, or Staff.'
+        error: 'Demo user not recognized. Please choose from registered Admin, Manager, Technician, or Staff accounts.'
       };
     }
 
-    setCurrentUser(matchedUser);
-    storageService.saveCurrentUser(matchedUser);
+    if (!existingUser.active) {
+      return {
+        success: false,
+        error: 'This account has been deactivated by the system administrator. Access is disabled.'
+      };
+    }
 
-    return { success: true, user: matchedUser };
+    setCurrentUser(existingUser);
+    storageService.saveCurrentUser(existingUser);
+
+    return { success: true, user: existingUser };
   }, []);
 
   // Logout handler
@@ -56,7 +64,18 @@ export function AuthProvider({ children }) {
 
   // Quick Switch Role handler (for evaluators)
   const switchRole = useCallback((targetRole) => {
-    const matched = INITIAL_USERS.find((u) => u.role === targetRole);
+    const currentUsers = storageService.getUsers();
+    // Check if account with this role exists and is deactivated
+    const existing = currentUsers.find((u) => u.role === targetRole);
+    if (existing && !existing.active) {
+      // Deactivated account cannot be logged into
+      return null;
+    }
+
+    let matched = existing && existing.active ? existing : null;
+    if (!matched) {
+      matched = INITIAL_USERS.find((u) => u.role === targetRole && u.active);
+    }
     if (matched) {
       setCurrentUser(matched);
       storageService.saveCurrentUser(matched);

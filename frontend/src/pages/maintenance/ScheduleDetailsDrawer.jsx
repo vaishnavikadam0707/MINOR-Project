@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -40,9 +41,11 @@ export default function ScheduleDetailsDrawer({
   schedule,
   onEdit
 }) {
+  const navigate = useNavigate();
   const {
     assets,
     users,
+    workOrders,
     completeSchedule,
     cancelSchedule,
     rescheduleSchedule,
@@ -67,6 +70,9 @@ export default function ScheduleDetailsDrawer({
     (a) => a.id === schedule.assetId || a.assetId === schedule.assetId
   );
   const technician = users.find((u) => u.id === schedule.assignedTechnicianId);
+  const linkedWo = workOrders.find(
+    (w) => w.workOrderId === schedule.linkedWorkOrderId || w.id === schedule.linkedWorkOrderId || w.linkedScheduleId === schedule.id
+  );
   const effectiveStatus = getEffectiveScheduleStatus(schedule);
 
   // Permissions
@@ -310,17 +316,32 @@ export default function ScheduleDetailsDrawer({
                 )}
 
                 {/* Linked Work Order */}
-                {schedule.linkedWorkOrderId && (
+                {(schedule.linkedWorkOrderId || linkedWo) && (
                   <div className="p-3.5 rounded-xl bg-status-info/10 border border-status-info/30 flex items-center justify-between">
                     <div>
                       <span className="text-[10px] text-status-info uppercase font-bold block">
                         Linked Dispatch Work Order
                       </span>
                       <span className="text-xs font-bold text-text-primary">
-                        {schedule.linkedWorkOrderId}
+                        {linkedWo?.workOrderId || schedule.linkedWorkOrderId}
                       </span>
                     </div>
-                    <Badge status="IN_PROGRESS" size="xs" />
+                    <div className="flex items-center gap-2">
+                      <Badge status={linkedWo?.status || 'IN_PROGRESS'} size="xs" />
+                      {linkedWo && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClose();
+                            navigate(`/app/work-orders/${linkedWo.id}`);
+                          }}
+                          className="p-1 rounded text-text-muted hover:text-accent-primary hover:bg-white/[0.08] transition-colors"
+                          title="Open Work Order Details"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

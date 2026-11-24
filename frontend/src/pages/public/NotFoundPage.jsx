@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Home, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, Home, ArrowLeft, LayoutDashboard } from 'lucide-react';
 import Button from '../../components/common/Button';
+import { useAuth } from '../../context/AuthContext';
 
 export default function NotFoundPage() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
@@ -36,10 +38,10 @@ export default function NotFoundPage() {
 
           <Button
             variant="primary"
-            icon={Home}
-            onClick={() => navigate('/')}
+            icon={isAuthenticated ? LayoutDashboard : Home}
+            onClick={() => navigate(isAuthenticated ? '/app/dashboard' : '/')}
           >
-            Return Home
+            {isAuthenticated ? 'Return to Dashboard' : 'Return Home'}
           </Button>
         </div>
       </div>

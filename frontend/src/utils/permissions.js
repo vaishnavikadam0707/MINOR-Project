@@ -16,8 +16,9 @@ export const ROUTE_PERMISSIONS = {
   '/app/maintenance': [ROLES.ADMIN, ROLES.MANAGER, ROLES.TECHNICIAN, ROLES.STAFF],
   '/app/work-orders': [ROLES.ADMIN, ROLES.MANAGER, ROLES.TECHNICIAN, ROLES.STAFF],
   '/app/work-orders/:id': [ROLES.ADMIN, ROLES.MANAGER, ROLES.TECHNICIAN, ROLES.STAFF],
-  '/app/service-history': [ROLES.ADMIN, ROLES.MANAGER, ROLES.TECHNICIAN],
-  '/app/costs': [ROLES.ADMIN, ROLES.MANAGER],
+  '/app/service-history': [ROLES.ADMIN, ROLES.MANAGER, ROLES.TECHNICIAN, ROLES.STAFF],
+  '/app/repair-costs': [ROLES.ADMIN, ROLES.MANAGER, ROLES.TECHNICIAN],
+  '/app/costs': [ROLES.ADMIN, ROLES.MANAGER, ROLES.TECHNICIAN],
   '/app/reports': [ROLES.ADMIN, ROLES.MANAGER],
   '/app/notifications': [ROLES.ADMIN, ROLES.MANAGER, ROLES.TECHNICIAN, ROLES.STAFF],
   '/app/users': [ROLES.ADMIN],
@@ -48,9 +49,15 @@ export const PERMISSIONS = {
   CAN_CLOSE_WORK_ORDER: [ROLES.ADMIN, ROLES.MANAGER],
 
   // Service & Costs
+  CAN_VIEW_SERVICE_HISTORY: [ROLES.ADMIN, ROLES.MANAGER, ROLES.TECHNICIAN, ROLES.STAFF],
+  CAN_ADD_SERVICE_RECORD: [ROLES.ADMIN, ROLES.MANAGER, ROLES.TECHNICIAN],
+  CAN_EDIT_SERVICE_RECORD: [ROLES.ADMIN, ROLES.MANAGER],
+  CAN_VIEW_REPAIR_COSTS: [ROLES.ADMIN, ROLES.MANAGER, ROLES.TECHNICIAN],
+  CAN_MANAGE_REPAIR_COSTS: [ROLES.ADMIN, ROLES.MANAGER],
+  CAN_MANAGE_INVOICES: [ROLES.ADMIN, ROLES.MANAGER],
+  CAN_EXPORT_FINANCIAL_REPORTS: [ROLES.ADMIN, ROLES.MANAGER],
   CAN_ADD_SERVICE_NOTE: [ROLES.ADMIN, ROLES.MANAGER, ROLES.TECHNICIAN],
   CAN_RECORD_REPAIR_COST: [ROLES.ADMIN, ROLES.MANAGER, ROLES.TECHNICIAN],
-  CAN_VIEW_REPAIR_COSTS: [ROLES.ADMIN, ROLES.MANAGER],
 
   // Reports & Administration
   CAN_VIEW_REPORTS: [ROLES.ADMIN, ROLES.MANAGER],
@@ -70,9 +77,11 @@ export function hasPermission(userRole, permissionKey) {
 export function canAccessRoute(userRole, pathname) {
   if (!userRole) return false;
 
+  const cleanPath = pathname && pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+
   // Exact match first
-  if (ROUTE_PERMISSIONS[pathname]) {
-    return ROUTE_PERMISSIONS[pathname].includes(userRole);
+  if (ROUTE_PERMISSIONS[cleanPath]) {
+    return ROUTE_PERMISSIONS[cleanPath].includes(userRole);
   }
 
   // Parameterized match (e.g. /app/assets/AST-001)
@@ -80,13 +89,13 @@ export function canAccessRoute(userRole, pathname) {
     if (routePattern.includes(':')) {
       const regexStr = '^' + routePattern.replace(/:[^/]+/g, '[^/]+') + '$';
       const regex = new RegExp(regexStr);
-      if (regex.test(pathname)) {
+      if (regex.test(cleanPath)) {
         return allowedRoles.includes(userRole);
       }
     }
   }
 
-  // Default allow /app/dashboard
+  // Default allow
   return true;
 }
 

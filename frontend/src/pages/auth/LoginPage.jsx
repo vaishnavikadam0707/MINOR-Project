@@ -47,6 +47,7 @@ export default function LoginPage() {
 
   const handleQuickLogin = (roleName) => {
     setIsLoading(true);
+    setError('');
     const switched = switchRole(roleName);
     if (switched) {
       showToast({
@@ -55,6 +56,14 @@ export default function LoginPage() {
         message: `Welcome, ${switched.name}. Entering role-specific workspace.`
       });
       navigate('/app/dashboard');
+    } else {
+      const msg = `This ${roleName} account has been deactivated by the system administrator. Access is disabled.`;
+      setError(msg);
+      showToast({
+        type: 'error',
+        title: 'Account Deactivated',
+        message: msg
+      });
     }
     setIsLoading(false);
   };

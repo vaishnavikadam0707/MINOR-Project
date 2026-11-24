@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/navigation/Sidebar';
 import TopNav from '../components/navigation/TopNav';
+import SmartAssistant from '../components/assistant/SmartAssistant';
 import { ShieldAlert } from 'lucide-react';
 
 export default function DashboardLayout() {

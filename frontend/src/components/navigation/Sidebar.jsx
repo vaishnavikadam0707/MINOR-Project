@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppData } from '../../context/AppDataContext';
+import { useToast } from '../../context/ToastContext';
 import { canAccessRoute, getRoleBadgeStyle } from '../../utils/permissions';
 
 export default function Sidebar({
@@ -33,6 +34,7 @@ export default function Sidebar({
 }) {
   const { currentUser, role, logout, switchRole, ROLES } = useAuth();
   const { metrics } = useAppData();
+  const { showToast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -72,10 +74,11 @@ export default function Sidebar({
       title: 'Service History',
       path: '/app/service-history',
       icon: History,
+      count: metrics?.totalServiceRecords
     },
     {
       title: 'Repair Costs',
-      path: '/app/costs',
+      path: '/app/repair-costs',
       icon: DollarSign,
     },
     {
@@ -110,8 +113,21 @@ export default function Sidebar({
   const handleRoleQuickSwitch = (e) => {
     const target = e.target.value;
     if (target && target !== role) {
-      switchRole(target);
-      navigate('/app/dashboard');
+      const switched = switchRole(target);
+      if (switched) {
+        showToast({
+          type: 'success',
+          title: `Role Switched: ${target}`,
+          message: `Active session set to ${switched.name}.`
+        });
+        navigate('/app/dashboard');
+      } else {
+        showToast({
+          type: 'error',
+          title: 'Account Deactivated',
+          message: `The ${target} account is currently deactivated by the administrator.`
+        });
+      }
     }
   };
 

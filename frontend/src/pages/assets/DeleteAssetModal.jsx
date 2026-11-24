@@ -21,8 +21,18 @@ export default function DeleteAssetModal({
 
   const relationSummary = hasRelatedRecords(asset.id);
   const canDeleteHard = hasPermission(role, 'CAN_DELETE_ASSET');
+  const canArchive = hasPermission(role, 'CAN_EDIT_ASSET');
 
   const handleArchive = () => {
+    if (!canArchive) {
+      showToast({
+        type: 'error',
+        title: 'Action Prohibited',
+        message: 'Your role does not have authorization to archive or retire assets.'
+      });
+      return;
+    }
+
     archiveAsset(asset.id);
     showToast({
       type: 'info',
@@ -39,6 +49,15 @@ export default function DeleteAssetModal({
         type: 'error',
         title: 'Action Prohibited',
         message: 'Only Institutional Admins can permanently delete asset records.'
+      });
+      return;
+    }
+
+    if (relationSummary.hasRecords) {
+      showToast({
+        type: 'error',
+        title: 'Deletion Blocked',
+        message: `Cannot permanently delete ${asset.assetId} because it has ${relationSummary.totalCount} linked records (work orders, maintenance schedules, service logs, or expenses). Archive the asset instead to protect historical integrity.`
       });
       return;
     }
@@ -128,14 +147,21 @@ export default function DeleteAssetModal({
             Archive (Retire)
           </Button>
 
-          {/* Permanent Delete for Admins */}
+          {/* Permanent Delete for Admins (Blocked if has relational records) */}
           {canDeleteHard && (
             <Button
-              variant="danger"
+              variant={relationSummary.hasRecords ? 'outline' : 'danger'}
               icon={Trash2}
               onClick={handleDeletePermanent}
-              className="w-full sm:w-auto justify-center text-xs"
-              title="Delete permanently from prototype"
+              disabled={relationSummary.hasRecords}
+              className={`w-full sm:w-auto justify-center text-xs ${
+                relationSummary.hasRecords ? 'opacity-40 cursor-not-allowed text-text-muted border-white/10' : ''
+              }`}
+              title={
+                relationSummary.hasRecords
+                  ? 'Cannot delete: Asset has linked maintenance or work order history. Archive instead.'
+                  : 'Delete permanently from prototype'
+              }
             >
               Delete
             </Button>

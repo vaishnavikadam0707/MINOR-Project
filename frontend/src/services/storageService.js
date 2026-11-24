@@ -7,7 +7,7 @@ import {
   INITIAL_SERVICE_HISTORY,
   INITIAL_REPAIR_COSTS,
   INITIAL_NOTIFICATIONS
-} from '../data/seedData';
+} from '../data/seedData.js';
 
 const STORAGE_KEY = 'smartAssetCareDemo_v1';
 const USER_KEY = 'smartAsset_currentUser_v1';
@@ -41,6 +41,8 @@ export const storageService = {
 
           return {
             ...parsed,
+            users: parsed.users || INITIAL_USERS,
+            notifications: parsed.notifications || INITIAL_NOTIFICATIONS,
             schedules: normalizedSchedules
           };
         }
@@ -68,6 +70,22 @@ export const storageService = {
     }
 
     return defaultState;
+  },
+
+  // Load current users from state
+  getUsers: () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.users) && parsed.users.length > 0) {
+          return parsed.users;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to parse users from localStorage:', e);
+    }
+    return INITIAL_USERS;
   },
 
   // Persist updated app state

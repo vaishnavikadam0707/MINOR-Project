@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Layers,
@@ -22,14 +22,31 @@ import {
   AlertTriangle,
   History,
   Copy,
-  Check
+  Check,
+  TrendingUp,
+  Plus,
+  ExternalLink,
+  Receipt
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid
+} from 'recharts';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Card from '../../components/cards/Card';
 import AssetFormModal from './AssetFormModal';
 import DeleteAssetModal from './DeleteAssetModal';
+import InvoiceModal from '../costs/components/InvoiceModal';
+import ExpenseFormModal from '../costs/components/ExpenseFormModal';
+import ServiceDetailModal from '../history/components/ServiceDetailModal';
+import ServiceFormModal from '../history/components/ServiceFormModal';
 import { useAppData } from '../../context/AppDataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -39,13 +56,17 @@ import { formatRupee, formatDate } from '../../utils/formatters';
 export default function AssetDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { assets, schedules, serviceHistory, repairCosts, users } = useAppData();
+  const { assets, schedules, serviceHistory, repairCosts, workOrders, users } = useAppData();
   const { role } = useAuth();
   const { showToast } = useToast();
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [selectedInvoiceCost, setSelectedInvoiceCost] = useState(null);
+  const [selectedServiceRecord, setSelectedServiceRecord] = useState(null);
+  const [serviceModalOpen, setServiceModalOpen] = useState(false);
+  const [expenseModalOpen, setExpenseModalOpen] = useState(false);
 
   // Hidden canvas for downloading PNG
   const qrCanvasRef = useRef(null);
@@ -92,6 +113,31 @@ export default function AssetDetailPage() {
     (acc, c) => acc + (Number(c.totalCost) || 0),
     0
   );
+
+  const mostRecentCost = useMemo(() => {
+    if (!matchedCosts.length) return null;
+    return [...matchedCosts].sort((a, b) => {
+      const dateA = a.expenseDate || a.serviceDate || '';
+      const dateB = b.expenseDate || b.serviceDate || '';
+      return dateB.localeCompare(dateA);
+    })[0];
+  }, [matchedCosts]);
+
+  const assetCostTrend = useMemo(() => {
+    if (!matchedCosts.length) return [];
+    return [...matchedCosts]
+      .sort((a, b) => {
+        const dateA = a.expenseDate || a.serviceDate || '';
+        const dateB = b.expenseDate || b.serviceDate || '';
+        return dateA.localeCompare(dateB);
+      })
+      .map((c) => ({
+        date: formatDate(c.expenseDate || c.serviceDate),
+        rawDate: c.expenseDate || c.serviceDate,
+        total: Number(c.totalCost) || 0,
+        id: c.expenseId || c.id
+      }));
+  }, [matchedCosts]);
 
   // Warranty status calculation
   const isWarrantyActive = React.useMemo(() => {
@@ -570,6 +616,16 @@ export default function AssetDetailPage() {
         title="Service & Maintenance History"
         subtitle={`Chronological log of ${matchedHistory.length} completed maintenance operations`}
         icon={History}
+        action={
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Plus}
+            onClick={() => setServiceModalOpen(true)}
+          >
+            Log Service
+          </Button>
+        }
       >
         <div className="space-y-6">
           {matchedHistory.length > 0 ? (
@@ -579,36 +635,41 @@ export default function AssetDetailPage() {
                   {/* Timeline Node */}
                   <div className="absolute -left-6 top-1 w-4 h-4 rounded-full bg-bg-card border-2 border-accent-primary group-hover:scale-125 transition-transform" />
 
-                  <div className="p-4 rounded-2xl bg-bg-elevated border border-industrial-border space-y-2 hover:border-accent-primary/40 transition-colors">
+                  <div
+                    onClick={() => setSelectedServiceRecord(item)}
+                    className="p-4 rounded-2xl bg-bg-elevated border border-industrial-border space-y-2 hover:border-accent-primary/60 transition-all cursor-pointer shadow-sm hover:shadow-glow-sm"
+                  >
                     <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-                      <span className="font-bold text-accent-primary">
+                      <span className="font-bold text-accent-primary flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5" />
                         Service Date: {formatDate(item.serviceDate)}
                       </span>
-                      <span className="px-2 py-0.5 rounded-md bg-white/[0.04] text-text-muted">
-                        Record ID: {item.id.toUpperCase()}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-white/[0.04] text-text-muted">
+                          {item.serviceId || item.id.toUpperCase()}
+                        </span>
+                        <span className="text-[10px] text-accent-primary font-mono flex items-center gap-0.5 hover:underline">
+                          View Certificate <ExternalLink className="w-3 h-3" />
+                        </span>
+                      </div>
                     </div>
 
                     <h4 className="text-sm font-bold text-text-primary">
-                      {item.problemIdentified}
+                      {item.problemIdentified || item.serviceDescription}
                     </h4>
 
                     <p className="text-xs text-text-secondary">
-                      {item.serviceDescription}
+                      {item.workPerformed || item.actionTaken}
                     </p>
 
                     <div className="p-2.5 rounded-xl bg-bg-card border border-industrial-border text-xs font-mono space-y-1">
                       <div>
-                        <span className="text-text-muted">Work Executed: </span>
-                        <span className="text-text-primary">{item.workPerformed}</span>
-                      </div>
-                      <div>
                         <span className="text-text-muted">Parts Replaced: </span>
                         <span className="text-status-warning font-semibold">{item.partsReplaced || 'None'}</span>
                       </div>
-                      <div>
-                        <span className="text-text-muted">Technician Remarks: </span>
-                        <span className="text-status-success font-semibold">✓ {item.finalRemarks}</span>
+                      <div className="flex items-center justify-between pt-1 border-t border-industrial-border/40">
+                        <span className="text-text-muted">Certified Service Expense:</span>
+                        <span className="font-bold text-accent-primary">{formatRupee(item.totalCost || 0)}</span>
                       </div>
                     </div>
                   </div>
@@ -628,6 +689,16 @@ export default function AssetDetailPage() {
         title="Repair Expenses & Financial Audit"
         subtitle={`Total capital spent on repairs: ${formatRupee(totalRepairSpend)}`}
         icon={DollarSign}
+        action={
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Plus}
+            onClick={() => setExpenseModalOpen(true)}
+          >
+            Record Expense
+          </Button>
+        }
       >
         <div className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
@@ -672,18 +743,30 @@ export default function AssetDetailPage() {
                     <th className="p-3">Other (₹)</th>
                     <th className="p-3">Total Amount</th>
                     <th className="p-3">Invoice File</th>
+                    <th className="p-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-industrial-border bg-bg-card">
                   {matchedCosts.map((c) => (
-                    <tr key={c.id} className="hover:bg-white/[0.02]">
-                      <td className="p-3 font-bold text-accent-primary">{c.id.toUpperCase()}</td>
-                      <td className="p-3 text-text-muted">{formatDate(c.serviceDate)}</td>
+                    <tr
+                      key={c.id}
+                      onClick={() => setSelectedInvoiceCost(c)}
+                      className="hover:bg-white/[0.04] transition-colors cursor-pointer group"
+                    >
+                      <td className="p-3 font-bold text-accent-primary">
+                        {c.expenseId || c.id.toUpperCase()}
+                      </td>
+                      <td className="p-3 text-text-muted">{formatDate(c.expenseDate || c.serviceDate)}</td>
                       <td className="p-3 text-text-secondary">{formatRupee(c.labourCost)}</td>
                       <td className="p-3 text-text-secondary">{formatRupee(c.partsCost)}</td>
                       <td className="p-3 text-text-secondary">{formatRupee(c.otherCharges)}</td>
                       <td className="p-3 font-bold text-accent-primary">{formatRupee(c.totalCost)}</td>
-                      <td className="p-3 text-text-muted">{c.invoiceName || 'N/A'}</td>
+                      <td className="p-3 text-text-muted">{c.invoiceName || c.invoiceNumber || 'Invoice.pdf'}</td>
+                      <td className="p-3 text-right">
+                        <span className="text-[11px] text-accent-primary font-mono group-hover:underline flex items-center justify-end gap-1">
+                          <FileText className="w-3.5 h-3.5" /> View Bill
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -759,6 +842,47 @@ export default function AssetDetailPage() {
         onClose={() => setDeleteModalOpen(false)}
         asset={asset}
         onSuccess={() => navigate('/app/assets')}
+      />
+
+      {/* Service Detail Modal */}
+      {selectedServiceRecord && (
+        <ServiceDetailModal
+          isOpen={Boolean(selectedServiceRecord)}
+          onClose={() => setSelectedServiceRecord(null)}
+          record={selectedServiceRecord}
+          asset={asset}
+          technician={users.find((u) => u.id === selectedServiceRecord.technicianId)}
+          workOrder={workOrders.find(
+            (w) => w.id === selectedServiceRecord.workOrderId || w.workOrderId === selectedServiceRecord.workOrderId
+          )}
+        />
+      )}
+
+      {/* Commercial Invoice Modal */}
+      {selectedInvoiceCost && (
+        <InvoiceModal
+          isOpen={Boolean(selectedInvoiceCost)}
+          onClose={() => setSelectedInvoiceCost(null)}
+          expense={selectedInvoiceCost}
+          asset={asset}
+          workOrder={workOrders.find(
+            (w) => w.id === selectedInvoiceCost.workOrderId || w.workOrderId === selectedInvoiceCost.workOrderId
+          )}
+        />
+      )}
+
+      {/* Log Service Modal */}
+      <ServiceFormModal
+        isOpen={serviceModalOpen}
+        onClose={() => setServiceModalOpen(false)}
+        defaultAssetId={asset.id}
+      />
+
+      {/* Record Expense Modal */}
+      <ExpenseFormModal
+        isOpen={expenseModalOpen}
+        onClose={() => setExpenseModalOpen(false)}
+        initialData={{ assetId: asset.id }}
       />
     </div>
   );

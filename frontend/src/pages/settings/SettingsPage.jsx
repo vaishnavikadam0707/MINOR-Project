@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Settings, User, RotateCcw, Shield, Check } from 'lucide-react';
+import { Settings, User, RotateCcw, Shield, Check, Lock } from 'lucide-react';
 import Button from '../../components/common/Button';
 import TextInput from '../../components/forms/TextInput';
 import ConfirmDialog from '../../components/modals/ConfirmDialog';
 import { useAuth } from '../../context/AuthContext';
 import { useAppData } from '../../context/AppDataContext';
 import { useToast } from '../../context/ToastContext';
+import { hasPermission } from '../../utils/permissions';
 
 export default function SettingsPage() {
   const { currentUser, updateProfile, role } = useAuth();
@@ -15,6 +16,8 @@ export default function SettingsPage() {
   const [name, setName] = useState(currentUser?.name || '');
   const [phone, setPhone] = useState(currentUser?.phone || '');
   const [resetModalOpen, setResetModalOpen] = useState(false);
+
+  const canReset = hasPermission(role, 'CAN_RESET_DEMO_DATA');
 
   const handleSaveProfile = (e) => {
     e.preventDefault();
@@ -27,6 +30,16 @@ export default function SettingsPage() {
   };
 
   const handleConfirmReset = () => {
+    if (!canReset) {
+      showToast({
+        type: 'error',
+        title: 'Action Prohibited',
+        message: 'Only Institutional Administrators are permitted to reset demo data to seeds.'
+      });
+      setResetModalOpen(false);
+      return;
+    }
+
     resetAllData();
     setResetModalOpen(false);
     showToast({
@@ -91,14 +104,21 @@ export default function SettingsPage() {
           Restore the initial demonstration dataset (assets, work orders, preventive schedules, costs, and notifications). Any local prototype modifications will be safely re-seeded.
         </p>
 
-        <Button
-          variant="danger"
-          size="sm"
-          icon={RotateCcw}
-          onClick={() => setResetModalOpen(true)}
-        >
-          Reset Demo Data to Factory Seeds
-        </Button>
+        {canReset ? (
+          <Button
+            variant="danger"
+            size="sm"
+            icon={RotateCcw}
+            onClick={() => setResetModalOpen(true)}
+          >
+            Reset Demo Data to Factory Seeds
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-text-muted">
+            <Lock className="w-4 h-4 text-status-warning shrink-0" />
+            <span>Restricted action: Only Institutional Administrators can reset the prototype demo database.</span>
+          </div>
+        )}
       </div>
 
       {/* Reset Confirmation Dialog */}

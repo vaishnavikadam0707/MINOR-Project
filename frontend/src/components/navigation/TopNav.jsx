@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppData } from '../../context/AppDataContext';
+import { useToast } from '../../context/ToastContext';
 import { getRoleBadgeStyle } from '../../utils/permissions';
 
 export default function TopNav({
@@ -27,6 +28,7 @@ export default function TopNav({
 }) {
   const { currentUser, role, logout, switchRole, ROLES } = useAuth();
   const { assets, workOrders, notifications, markNotificationAsRead, metrics } = useAppData();
+  const { showToast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -76,6 +78,7 @@ export default function TopNav({
         maintenance: 'Maintenance',
         'work-orders': 'Work Orders',
         'service-history': 'Service History',
+        'repair-costs': 'Repair Costs',
         costs: 'Repair Costs',
         reports: 'Reports',
         notifications: 'Notifications',
@@ -403,9 +406,22 @@ export default function TopNav({
                       <button
                         key={r}
                         onClick={() => {
-                          switchRole(r);
+                          const switched = switchRole(r);
                           setProfileDropdownOpen(false);
-                          navigate('/app/dashboard');
+                          if (switched) {
+                            showToast({
+                              type: 'success',
+                              title: `Switched to ${r}`,
+                              message: `Active session set to ${switched.name}.`
+                            });
+                            navigate('/app/dashboard');
+                          } else {
+                            showToast({
+                              type: 'error',
+                              title: 'Account Deactivated',
+                              message: `The ${r} account is currently deactivated by the administrator.`
+                            });
+                          }
                         }}
                         className={`px-2 py-1 rounded-lg text-left transition-colors ${
                           role === r

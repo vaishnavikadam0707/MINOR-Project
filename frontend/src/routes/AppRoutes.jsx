@@ -20,6 +20,7 @@ import AssetDetailPage from '../pages/assets/AssetDetailPage';
 import QrCodesPage from '../pages/qr/QrCodesPage';
 import MaintenancePage from '../pages/maintenance/MaintenancePage';
 import WorkOrdersPage from '../pages/workorders/WorkOrdersPage';
+import WorkOrderDetailPage from '../pages/workorders/WorkOrderDetailPage';
 import ServiceHistoryPage from '../pages/history/ServiceHistoryPage';
 import CostsPage from '../pages/costs/CostsPage';
 import ReportsPage from '../pages/reports/ReportsPage';
@@ -56,12 +57,15 @@ export default function AppRoutes() {
         <Route path="qr-codes" element={<QrCodesPage />} />
         <Route path="maintenance" element={<MaintenancePage />} />
         <Route path="work-orders" element={<WorkOrdersPage />} />
+        <Route path="work-orders/:id" element={<WorkOrderDetailPage />} />
         <Route path="service-history" element={<ServiceHistoryPage />} />
-        <Route path="costs" element={<CostsPage />} />
+        <Route path="repair-costs" element={<CostsPage />} />
+        <Route path="costs" element={<Navigate to="/app/repair-costs" replace />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
 
       {/* 404 Catch-All */}
